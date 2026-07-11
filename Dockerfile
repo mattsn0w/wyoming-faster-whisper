@@ -18,12 +18,12 @@ RUN \
         setuptools \
         wheel \
     && .venv/bin/pip3 install --no-cache-dir \
-        --extra-index-url 'https://download.pytorch.org/whl/cpu' \
+        --extra-index-url 'https://download.pytorch.org/whl/xpu' \
         'torch==2.6.0' \
     \
     && .venv/bin/pip3 install --no-cache-dir \
         --extra-index-url https://www.piwheels.org/simple \
-        -e '.[zeroconf,transformers,sherpa,onnx-asr]' \
+        -e '.[zeroconf,transformers,sherpa,onnx-asr,faster-whisper-openvino]' \
     \
     && rm -rf /var/lib/apt/lists/*
 
