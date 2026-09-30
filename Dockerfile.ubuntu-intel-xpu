@@ -1,0 +1,42 @@
+FROM ubuntu:24.04
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+# Add render and video groups
+RUN \
+  groupadd -g 993 render \
+  && usermod -aG render ubuntu \
+  && usermod -aG video ubuntu \
+  && apt-get update && apt install -y software-properties-common \
+  && add-apt-repository -y ppa:kobuk-team/intel-graphics \
+  && apt-get update \
+  && apt-get install -y libze-intel-gpu1 libze1 intel-metrics-discovery intel-opencl-icd clinfo intel-gsc \
+  && apt-get install -y intel-media-va-driver-non-free libmfx-gen1.2 libvpl2 libvpl-tools libva-glx2 va-driver-all vainfo
+
+# Install faster-whisper
+WORKDIR /usr/src
+
+COPY ./pyproject.toml ./
+RUN \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-venv \
+    \
+    && python3 -m venv .venv \
+    && .venv/bin/pip3 install --no-cache-dir -U \
+        setuptools \
+        wheel \
+    && .venv/bin/pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu \
+    && .venv/bin/pip3 install --no-cache-dir \
+        --extra-index-url https://www.piwheels.org/simple \
+        --extra-index-url https://download.pytorch.org/whl/xpu \
+        -e '.[zeroconf,transformers,sherpa,onnx-asr,faster-whisper-openvino]' \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ./ ./
+
+EXPOSE 10300
+
+ENTRYPOINT ["bash", "docker_run.sh"]
